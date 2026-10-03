@@ -5,7 +5,7 @@ Aplicação web estática para criar e compartilhar artes personalizadas de camp
 ## Fluxo
 
 1. **Início:** a pessoa escolhe entre colocar o **nome** ou a **foto**.
-2. **Editor:** a prévia mostra a moldura; abaixo dela ficam as miniaturas para trocar de arte e o campo de nome ou o botão para escolher a foto.
+2. **Editor:** a prévia mostra a moldura; abaixo dela ficam as miniaturas para trocar de arte e o campo de nome ou o botão para escolher a foto. No modo foto, a imagem pode ser posicionada arrastando na prévia e ampliada com pinça, roda do mouse ou o controle de zoom; ela sempre cobre a moldura inteira.
 3. **Exportar:** abre o compartilhamento nativo do dispositivo (WhatsApp, Instagram etc.). Quando o navegador não oferece esse recurso, a imagem é baixada. O botão **Baixar imagem** sempre faz o download.
 
 ## Métricas (Google Analytics 4)

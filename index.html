@@ -112,6 +112,15 @@
       <div id="campo-foto" class="campo hidden">
         <button id="btnFoto" class="btn btn-foto" type="button">Escolher foto</button>
         <input id="foto-moldura" class="hidden" type="file" accept="image/*" aria-label="Escolher foto" />
+
+        <div id="ajuste-foto" class="ajuste-foto hidden">
+          <p class="dica">Arraste a foto na prévia para posicionar.</p>
+          <div class="zoom">
+            <button id="btnZoomMenos" class="btn-zoom" type="button" aria-label="Diminuir zoom">−</button>
+            <input id="zoom-foto" type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom da foto" />
+            <button id="btnZoomMais" class="btn-zoom" type="button" aria-label="Aumentar zoom">+</button>
+          </div>
+        </div>
       </div>
 
       <p id="aviso" class="aviso" role="status" aria-live="polite"></p>

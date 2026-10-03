@@ -9,6 +9,8 @@ const $inputPhoto = document.querySelector("#foto-moldura");
 const $fieldText = document.querySelector("#campo-texto");
 const $fieldPhoto = document.querySelector("#campo-foto");
 const $btnFoto = document.querySelector("#btnFoto");
+const $ajusteFoto = document.querySelector("#ajuste-foto");
+const $zoomFoto = document.querySelector("#zoom-foto");
 const $aviso = document.querySelector("#aviso");
 const $btnExportar = document.querySelector("#btnExportar");
 
@@ -20,6 +22,10 @@ let moldura = molduras[0];
 let modo = null;
 let baseImageFigure = new Image();
 let baseImageUsuario = null;
+let ajuste = { zoom: 1, x: 0, y: 0 };
+let desenhoAgendado = false;
+const ponteiros = new Map();
+let gesto = null;
 let carregamentoAtual = 0;
 let navegouParaEditor = false;
 
@@ -119,7 +125,7 @@ function render() {
   document.title = `${$tituloEditor.textContent} · ${TITULO_SITE}`;
   $fieldText.classList.toggle("hidden", modo !== "texto");
   $fieldPhoto.classList.toggle("hidden", modo !== "foto");
-  canvas.classList.toggle("clicavel", modo === "foto");
+  updatePhotoControls();
 
   renderMolduraOptions(disponiveis);
   loadFigure();
@@ -311,28 +317,155 @@ function drawText() {
 }
 
 function drawPhoto() {
-  const photo = baseImageUsuario || baseImgEscolhaImagem;
+  if (baseImageUsuario) {
+    drawUserPhoto(baseImageUsuario);
+  } else if (baseImgEscolhaImagem.complete && baseImgEscolhaImagem.naturalWidth) {
+    context.drawImage(baseImgEscolhaImagem, 0, 0, canvas.width, canvas.height);
+  }
 
-  if (photo.complete && photo.naturalWidth) drawImageCover(photo);
   context.drawImage(baseImageFigure, 0, 0, canvas.width, canvas.height);
 }
 
-function drawImageCover(image) {
-  const sourceSize = Math.min(image.naturalWidth, image.naturalHeight);
-  const sourceX = (image.naturalWidth - sourceSize) / 2;
-  const sourceY = (image.naturalHeight - sourceSize) / 2;
+/* Ajuste da foto: o zoom 1 cobre o canvas inteiro, e o deslocamento (x, y)
+   é medido em pixels do canvas a partir do centro. */
+
+function getPhotoSize(image, zoom = ajuste.zoom) {
+  const cover = Math.max(
+    canvas.width / image.naturalWidth,
+    canvas.height / image.naturalHeight
+  );
+
+  return {
+    width: image.naturalWidth * cover * zoom,
+    height: image.naturalHeight * cover * zoom,
+  };
+}
+
+function clampAjuste() {
+  if (!baseImageUsuario) return;
+
+  const { width, height } = getPhotoSize(baseImageUsuario);
+  const limiteX = (width - canvas.width) / 2;
+  const limiteY = (height - canvas.height) / 2;
+
+  ajuste.x = Math.min(limiteX, Math.max(-limiteX, ajuste.x));
+  ajuste.y = Math.min(limiteY, Math.max(-limiteY, ajuste.y));
+}
+
+function drawUserPhoto(image) {
+  const { width, height } = getPhotoSize(image);
 
   context.drawImage(
     image,
-    sourceX,
-    sourceY,
-    sourceSize,
-    sourceSize,
-    0,
-    0,
-    canvas.width,
-    canvas.height
+    (canvas.width - width) / 2 + ajuste.x,
+    (canvas.height - height) / 2 + ajuste.y,
+    width,
+    height
   );
+}
+
+function scheduleDraw() {
+  if (desenhoAgendado) return;
+
+  desenhoAgendado = true;
+  requestAnimationFrame(() => {
+    desenhoAgendado = false;
+    drawCanvas();
+  });
+}
+
+function setZoom(novoZoom, pontoX = canvas.width / 2, pontoY = canvas.height / 2) {
+  const min = Number($zoomFoto.min);
+  const max = Number($zoomFoto.max);
+  const zoom = Math.min(max, Math.max(min, novoZoom));
+  const proporcao = zoom / ajuste.zoom;
+
+  // Mantém parado o ponto da foto que está sob o dedo ou o cursor.
+  const centroX = canvas.width / 2 + ajuste.x;
+  const centroY = canvas.height / 2 + ajuste.y;
+  ajuste.x = pontoX + (centroX - pontoX) * proporcao - canvas.width / 2;
+  ajuste.y = pontoY + (centroY - pontoY) * proporcao - canvas.height / 2;
+  ajuste.zoom = zoom;
+
+  clampAjuste();
+  $zoomFoto.value = String(zoom);
+  scheduleDraw();
+}
+
+function toCanvasPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: ((event.clientX - rect.left) * canvas.width) / rect.width,
+    y: ((event.clientY - rect.top) * canvas.height) / rect.height,
+  };
+}
+
+function getGesto() {
+  const pontos = [...ponteiros.values()];
+  const [a, b] = pontos;
+
+  if (!b) return { x: a.x, y: a.y, distancia: 0 };
+
+  return {
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+    distancia: Math.hypot(a.x - b.x, a.y - b.y),
+  };
+}
+
+function onPointerDown(event) {
+  if (modo !== "foto" || !baseImageUsuario) return;
+
+  try {
+    canvas.setPointerCapture(event.pointerId);
+  } catch {
+    // Ponteiros sintéticos não podem ser capturados; o gesto segue funcionando.
+  }
+  ponteiros.set(event.pointerId, toCanvasPoint(event));
+  gesto = getGesto();
+  canvas.classList.add("arrastando");
+}
+
+function onPointerMove(event) {
+  if (!ponteiros.has(event.pointerId)) return;
+
+  ponteiros.set(event.pointerId, toCanvasPoint(event));
+  const atual = getGesto();
+
+  ajuste.x += atual.x - gesto.x;
+  ajuste.y += atual.y - gesto.y;
+
+  if (atual.distancia && gesto.distancia) {
+    setZoom(ajuste.zoom * (atual.distancia / gesto.distancia), atual.x, atual.y);
+  } else {
+    clampAjuste();
+    scheduleDraw();
+  }
+
+  gesto = atual;
+}
+
+function onPointerUp(event) {
+  ponteiros.delete(event.pointerId);
+  gesto = ponteiros.size ? getGesto() : null;
+  if (!ponteiros.size) canvas.classList.remove("arrastando");
+}
+
+function onWheel(event) {
+  if (modo !== "foto" || !baseImageUsuario) return;
+
+  event.preventDefault();
+  const { x, y } = toCanvasPoint(event);
+  setZoom(ajuste.zoom * Math.exp(-event.deltaY * 0.0015), x, y);
+}
+
+function updatePhotoControls() {
+  const ajustavel = modo === "foto" && Boolean(baseImageUsuario);
+
+  canvas.classList.toggle("clicavel", modo === "foto" && !baseImageUsuario);
+  canvas.classList.toggle("ajustavel", ajustavel);
+  $ajusteFoto.classList.toggle("hidden", !ajustavel);
 }
 
 function loadUserPhoto() {
@@ -345,7 +478,10 @@ function loadUserPhoto() {
   image.onload = () => {
     URL.revokeObjectURL(imageUrl);
     baseImageUsuario = image;
+    ajuste = { zoom: 1, x: 0, y: 0 };
+    $zoomFoto.value = "1";
     $btnFoto.textContent = "Trocar foto";
+    updatePhotoControls();
     setAviso("");
     drawCanvas();
   };
@@ -450,8 +586,20 @@ document.querySelectorAll(".escolha").forEach((option) => {
 document.querySelector("#btnVoltar").addEventListener("click", goHome);
 $btnFoto.addEventListener("click", () => $inputPhoto.click());
 canvas.addEventListener("click", () => {
-  if (modo === "foto") $inputPhoto.click();
+  if (modo === "foto" && !baseImageUsuario) $inputPhoto.click();
 });
+canvas.addEventListener("pointerdown", onPointerDown);
+canvas.addEventListener("pointermove", onPointerMove);
+canvas.addEventListener("pointerup", onPointerUp);
+canvas.addEventListener("pointercancel", onPointerUp);
+canvas.addEventListener("wheel", onWheel, { passive: false });
+$zoomFoto.addEventListener("input", () => setZoom(Number($zoomFoto.value)));
+document
+  .querySelector("#btnZoomMenos")
+  .addEventListener("click", () => setZoom(ajuste.zoom - 0.25));
+document
+  .querySelector("#btnZoomMais")
+  .addEventListener("click", () => setZoom(ajuste.zoom + 0.25));
 $inputText.addEventListener("input", () => {
   setAviso("");
   drawCanvas();
