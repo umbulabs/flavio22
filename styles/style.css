@@ -15,6 +15,7 @@
   --superficie: rgba(255, 255, 255, 0.08);
   --borda: rgba(255, 255, 255, 0.16);
   --raio: 18px;
+  --altura-faixa: 32px;
 }
 
 * {
@@ -68,7 +69,7 @@ button,
   flex-direction: column;
   margin: 0 auto;
   max-width: 560px;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--altura-faixa));
   padding: 0 16px;
 }
 
@@ -81,8 +82,12 @@ button,
   cursor: pointer;
   display: block;
   font: 600 0.85rem "Open Sans", sans-serif;
-  padding: 7px 16px;
+  height: var(--altura-faixa);
+  overflow: hidden;
+  padding: 0 16px;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   width: 100%;
 }
 
