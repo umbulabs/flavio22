@@ -35,7 +35,9 @@ Para ver `content_type`, `item_id` e `method` nos relatórios, cadastre-os como 
 docker compose up --build
 ```
 
-Acesse <http://localhost:8080>. Para usar outra porta:
+Acesse <http://localhost:8080>. A pasta do projeto é montada no container como volume somente leitura, então alterações nos arquivos aparecem ao recarregar a página, sem rebuild (o Nginx bloqueia o acesso a arquivos que não fazem parte do site, como `.git/` e `docker/`). Mudanças em `docker/nginx.conf` exigem `docker compose restart`.
+
+Para usar outra porta:
 
 ```bash
 APP_PORT=3000 docker compose up --build
@@ -73,7 +75,7 @@ Sem o parâmetro `m`, ou quando ele for inválido, a primeira campanha cadastrad
 
 1. Coloque as imagens quadradas da campanha em `imagens/`.
 2. Adicione um item ao array `molduras` em `dbMolduras.js` com um `dominio` único.
-3. Configure `styleText` para posicionar o nome (`translateX`, `translateY`, `maxWidth`, `fontSize`, `minFontSize`) e definir as cores: `color` para as letras e `backgroundColor` para a faixa arredondada atrás do nome. Configure também `imagens` para indicar as artes e miniaturas de texto e foto.
+3. Configure `styleText` para posicionar o nome (`translateX`, `translateY`, `maxWidth`, `fontSize`, `minFontSize`), opcionalmente girá-lo com `rotate` (em graus, sentido horário; valores negativos giram no sentido anti-horário, em torno do centro do texto) e definir as cores: `color` para as letras e `backgroundColor` para a faixa arredondada atrás do nome. Configure também `imagens` para indicar as artes e miniaturas de texto e foto.
 4. Valide a seleção, o texto e a foto em telas desktop e mobile.
 
 As imagens `thumbnailText` e `thumbnailPhoto` controlam se a moldura aparece em cada galeria. Quando uma delas não é informada, a opção correspondente fica oculta.

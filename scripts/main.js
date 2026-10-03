@@ -281,6 +281,13 @@ function drawText() {
 
   context.save();
   context.globalAlpha = textoDigitado ? 1 : 0.5;
+
+  if (style.rotate) {
+    context.translate(style.translateX, style.translateY);
+    context.rotate((style.rotate * Math.PI) / 180);
+    context.translate(-style.translateX, -style.translateY);
+  }
+
   setFont(fontSize);
 
   while (

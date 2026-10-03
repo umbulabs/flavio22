@@ -4,7 +4,8 @@ const molduras = [
     titulo: "Moldura 1",
     styleText: {
       translateX: 540,
-      translateY: 265,
+      translateY: 325,
+      rotate: -8,
       maxWidth: 820,
       fontSize: 92,
       minFontSize: 42,
@@ -23,7 +24,7 @@ const molduras = [
     titulo: "Moldura 2",
     styleText: {
       translateX: 540,
-      translateY: 300,
+      translateY: 270,
       maxWidth: 800,
       fontSize: 92,
       minFontSize: 42,
@@ -42,7 +43,8 @@ const molduras = [
     titulo: "Moldura 3",
     styleText: {
       translateX: 540,
-      translateY: 290,
+      translateY: 210,
+      rotate: -8,
       maxWidth: 780,
       fontSize: 92,
       minFontSize: 42,
@@ -61,7 +63,7 @@ const molduras = [
     titulo: "Moldura 4",
     styleText: {
       translateX: 540,
-      translateY: 240,
+      translateY: 320,
       maxWidth: 800,
       fontSize: 92,
       minFontSize: 42,
@@ -80,7 +82,8 @@ const molduras = [
     titulo: "Moldura 5",
     styleText: {
       translateX: 540,
-      translateY: 385,
+      translateY: 270,
+      rotate: -5,
       maxWidth: 780,
       fontSize: 92,
       minFontSize: 42,
