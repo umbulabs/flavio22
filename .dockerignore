@@ -1,0 +1,8 @@
+.git
+.github
+.DS_Store
+AGENTS.md
+README.md
+compose.yaml
+docker-compose.yml
+

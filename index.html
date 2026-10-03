@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#063d22" />
   <title>Molduras</title>
 
   <meta name="title" content="Molduras" />
@@ -12,22 +13,22 @@
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://joaoeymard.github.io/molduras/" />
+  <meta property="og:url" content="https://umbulabs.github.io/molduras/" />
   <meta property="og:title" content="Molduras" />
   <meta property="og:description" content="Gere seu flyer personalizado para você." />
   <meta property="og:image" itemprop="image"
-    content="https://joaoeymard.github.io/molduras/assets/imgEscolhaImagem.png?v=1" />
+    content="https://umbulabs.github.io/molduras/assets/imgEscolhaImagem.png?v=1" />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://joaoeymard.github.io/molduras/" />
+  <meta property="twitter:url" content="https://umbulabs.github.io/molduras/" />
   <meta property="twitter:title" content="Molduras" />
   <meta property="twitter:description" content="Gere seu flyer personalizado para você." />
-  <meta property="twitter:image" content="https://joaoeymard.github.io/molduras/assets/imgEscolhaImagem.png?v=1" />
+  <meta property="twitter:image" content="https://umbulabs.github.io/molduras/assets/imgEscolhaImagem.png?v=1" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="./styles/style.css">
 
@@ -54,60 +55,72 @@
 
   <div class="container">
 
-    <section id="menu" class="menu-principal">
-      <p class="label">Escolha uma opção:</p>
-      <button class="btn btnFull btnActions btnFigure" data-mtype="figure-name">
-        <img alt="Menu" />
-        <div>
-          <p>Coloque seu</p>
-          <span class="menuBtnDestaque">Nome</span>
-        </div>
-      </button>
-      <button class="btn btnFull btnActions btnFilter" style="margin-bottom: 25px;" data-mtype="filter-photo">
-        <img alt="Menu" />
-        <div>
-          <p>Coloque sua</p>
-          <span class="menuBtnDestaque">Foto</span>
-        </div>
-      </button>
+    <section id="inicio" class="tela inicio" aria-labelledby="titulo-inicio">
+      <header class="inicio-cabecalho">
+        <h1 id="titulo-inicio">Crie sua moldura</h1>
+        <p>Escolha como quer personalizar e depois compartilhe com os amigos.</p>
+      </header>
 
-      <a class="btn btnFull btnCredito" href="https://www.instagram.com/joaoeymard/">
-        <small>Feito por:</small>
-        <span class="menuBtnDestaque">@joaoeymard</span>
-      </a>
-      <a class="btn btnFull btnCredito" href="https://www.instagram.com/souocleison/">
-        <small>Desenhado por:</small>
-        <span class="menuBtnDestaque">@souocleison</span>
-      </a>
+      <div class="escolhas">
+        <button class="escolha" type="button" data-tipo="texto">
+          <span class="escolha-previa">
+            <img id="previa-texto" src="./imagens/moldura-texto-1.png" alt="" />
+          </span>
+          <span class="escolha-texto">
+            <small>Coloque seu</small>
+            <strong>Nome</strong>
+          </span>
+        </button>
+
+        <button class="escolha" type="button" data-tipo="foto">
+          <span class="escolha-previa">
+            <img src="./imagens/moldura-imagem-menu.png" alt="" />
+          </span>
+          <span class="escolha-texto">
+            <small>Coloque sua</small>
+            <strong>Foto</strong>
+          </span>
+        </button>
+      </div>
     </section>
 
-    <main id="main" class="hidden">
-      <div class="navbar">
-        <button class="btn btnVoltar btnActions" data-mtype="page-back">← Menu </button>
-        <a class="btn btnDoe" href="https://nubank.com.br/pagar/34k5f/YBpybYS3Ej" target="_blank">Faça sua doação</a>
+    <main id="editor" class="tela editor hidden" aria-labelledby="titulo-editor">
+      <div class="editor-topo">
+        <button id="btnVoltar" class="btn-voltar" type="button" aria-label="Voltar ao início">←</button>
+        <h1 id="titulo-editor">Coloque seu nome</h1>
       </div>
 
-      <canvas width="1080" height="1080"></canvas>
-
-      <div class="form-input">
-        <input name="user" type="text" placeholder="Coloque seu nome aqui" accept="image/*" />
-        <div>
-          <button id="btnSave" class="btn btnSave btnActions" data-mtype="save">Salvar</button>
-          <button id="btnShare" class="btn btnShare btnActions" data-mtype="share">Compartilhar</button>
-        </div>
+      <div class="previa">
+        <canvas width="1080" height="1080"></canvas>
       </div>
 
-      <footer>
-        <a href="https://www.instagram.com/joaoeymard/" target="_blank">
-          <img src="assets/instagram-logo.svg" />
-          <span>Feito por: @joaoeymard</span>
-        </a>
-        <a href="https://www.instagram.com/souocleison/" target="_blank">
-          <img src="assets/instagram-logo.svg" />
-          <span>Desenhado por: @souocleison</span>
-        </a>
-      </footer>
+      <div id="moldura-options" class="moldura-options" role="group" aria-label="Escolha a arte"></div>
+
+      <div id="campo-texto" class="campo">
+        <label for="texto-moldura">Seu nome</label>
+        <input id="texto-moldura" type="text" maxlength="40" placeholder="Digite seu nome aqui"
+          autocomplete="off" enterkeyhint="done" />
+      </div>
+
+      <div id="campo-foto" class="campo hidden">
+        <button id="btnFoto" class="btn btn-foto" type="button">Escolher foto</button>
+        <input id="foto-moldura" class="hidden" type="file" accept="image/*" aria-label="Escolher foto" />
+      </div>
+
+      <p id="aviso" class="aviso" role="status" aria-live="polite"></p>
+
+      <div class="acoes">
+        <button id="btnExportar" class="btn btn-exportar" type="button">Exportar</button>
+        <button id="btnBaixar" class="btn btn-secundario" type="button">Baixar imagem</button>
+      </div>
     </main>
+
+    <footer>
+      <a href="https://www.instagram.com/joaoeymard/" target="_blank" rel="noopener">
+        <img src="./assets/instagram-logo.svg" alt="" />
+        <span>Feito por: @joaoeymard</span>
+      </a>
+    </footer>
   </div>
 
   <script src="./scripts/main.js"></script>

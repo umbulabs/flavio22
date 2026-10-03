@@ -1,287 +1,460 @@
-// Seleção de elementos do DOM
 const canvas = document.querySelector("canvas");
 const context = canvas.getContext("2d");
-const $main = document.querySelector("#main");
-const $menu = document.querySelector("#menu");
-const $inputUser = $main.querySelector("input[name=user]");
+const $inicio = document.querySelector("#inicio");
+const $editor = document.querySelector("#editor");
+const $tituloEditor = document.querySelector("#titulo-editor");
+const $molduraOptions = document.querySelector("#moldura-options");
+const $inputText = document.querySelector("#texto-moldura");
+const $inputPhoto = document.querySelector("#foto-moldura");
+const $fieldText = document.querySelector("#campo-texto");
+const $fieldPhoto = document.querySelector("#campo-foto");
+const $btnFoto = document.querySelector("#btnFoto");
+const $aviso = document.querySelector("#aviso");
+const $btnExportar = document.querySelector("#btnExportar");
 
-// Variável para armazenar a moldura selecionada
-let moldura = null;
+const TIPOS = ["texto", "foto"];
+const TEXTO_EXEMPLO = "SEU NOME";
 
-// Carregamento da fonte personalizada
+let moldura = molduras[0];
+let modo = null;
+let baseImageFigure = new Image();
+let baseImageUsuario = null;
+let carregamentoAtual = 0;
+let navegouParaEditor = false;
+
+const baseImgEscolhaImagem = new Image();
+baseImgEscolhaImagem.onload = drawCanvas;
+baseImgEscolhaImagem.src = "./assets/imgEscolhaImagem.png";
+
 const pantonFont = new FontFace(
   "myPantonFont",
   "url(./assets/panton-extrabold.otf)"
 );
-pantonFont.load().then(function (font) {
-  document.fonts.add(font); // Adiciona a fonte ao documento
-});
 
-// Função para alternar entre as páginas
-function tooglePages() {
-  clearInputUser();
+pantonFont
+  .load()
+  .then((font) => {
+    document.fonts.add(font);
+    drawCanvas();
+  })
+  .catch(drawCanvas);
 
-  $menu.classList.toggle("hidden");
-  $main.classList.toggle("hidden");
+function getImagePath(item, type = modo) {
+  return type === "foto" ? item.imagens.figurePhoto : item.imagens.figureText;
 }
 
-function clearInputUser() {
-  $inputUser.type = "text";
-  $inputUser.value = "";
-  $inputUser.file = "";
+function getThumbnailPath(item, type = modo) {
+  return type === "foto"
+    ? item.imagens.thumbnailPhoto
+    : item.imagens.thumbnailText;
 }
 
-// Crie um objeto URL a partir da string da URL
-const urlObj = new URL(window.location.href);
-
-// Use URLSearchParams para acessar os parâmetros da query string
-const params = new URLSearchParams(urlObj.search);
-
-// Verifique se o parâmetro "m" existe
-if (params.has("m")) {
-  moldura = molduras.find((m) => m.dominio === params.get("m"));
+function getMoldurasDisponiveis(type = modo) {
+  return molduras.filter(
+    (item) => getThumbnailPath(item, type) && getImagePath(item, type)
+  );
 }
 
-// Carregamento de imagens
-const baseImgEscolhaImagem = new Image();
-baseImgEscolhaImagem.src = "./assets/imgEscolhaImagem.png";
+/* Navegação */
 
-const baseImageFigure = new Image();
-baseImageFigure.src = moldura.imagens.figureName;
+function readUrl() {
+  const url = new URL(window.location.href);
+  const tipo = url.searchParams.get("tipo");
 
-const baseImageMascara = new Image();
-baseImageMascara.src = moldura.imagens.figureFilter;
-
-let baseImageUsuario = new Image();
-
-// Evento de carregamento da imagem de apoio ao Brasil
-if (moldura.imagens.thumbnailName) {
-  $menu.querySelector(".btnFigure img").src = moldura.imagens.thumbnailName;
-} else {
-  $menu.querySelector(".btnFigure").classList.add("hidden");
+  modo = TIPOS.includes(tipo) ? tipo : null;
+  moldura =
+    molduras.find((item) => item.dominio === url.searchParams.get("m")) ||
+    moldura;
 }
 
-if (moldura.imagens.thumbnailFilter) {
-  $menu.querySelector(".btnFilter img").src = moldura.imagens.thumbnailFilter;
-} else {
-  $menu.querySelector(".btnFilter").classList.add("hidden");
+function buildUrl(tipo) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("m", moldura.dominio);
+
+  if (tipo) url.searchParams.set("tipo", tipo);
+  else url.searchParams.delete("tipo");
+
+  return url;
 }
 
-// Eventos de clique nos botões
-document.querySelectorAll(".btnActions").forEach((b) => {
-  b.addEventListener("click", clickMenu);
-});
-$inputUser.addEventListener("keyup", (ev) => {
-  ev.preventDefault();
-  drawFigureName();
-});
-$inputUser.addEventListener("change", (ev) => {
-  ev.preventDefault();
+function openEditor(tipo) {
+  window.history.pushState({}, "", buildUrl(tipo));
+  navegouParaEditor = true;
+  render();
+  window.scrollTo(0, 0);
+}
 
-  if ($inputUser.type === "file") drawFilterPhoto();
-});
-
-// Função que gera as ações dos cliques nos botões
-function clickMenu(ev) {
-  const target = ev.currentTarget;
-  const { mtype } = target.dataset;
-
-  switch (mtype) {
-    case "figure-name":
-      tooglePages();
-
-      $inputUser.type = "text";
-      drawFigureName();
-
-      break;
-    case "filter-photo":
-      tooglePages();
-
-      $inputUser.type = "file";
-      drawFilterPhoto();
-
-      break;
-    case "page-back":
-      tooglePages();
-
-      break;
-    case "save":
-      saveImage(ev);
-
-      break;
-    case "share":
-      shareImage(ev);
-
-      break;
+function goHome() {
+  if (navegouParaEditor) {
+    window.history.back();
+    return;
   }
+
+  window.history.replaceState({}, "", buildUrl(null));
+  render();
 }
 
-// Função para desenhar a figura e o nome caso exista
-function drawFigureName() {
-  const $input = $inputUser;
+function render() {
+  readUrl();
 
-  context.drawImage(baseImageFigure, 0, 0);
-  context.save();
+  const disponiveis = modo ? getMoldurasDisponiveis() : [];
+  if (modo && !disponiveis.length) modo = null;
 
-  if ($input.value.trim()) {
-    context.translate(
-      moldura.styleName.translateX,
-      moldura.styleName.translateY
+  $inicio.classList.toggle("hidden", Boolean(modo));
+  $editor.classList.toggle("hidden", !modo);
+  setAviso("");
+
+  if (!modo) {
+    renderInicio();
+    return;
+  }
+
+  if (!disponiveis.includes(moldura)) moldura = disponiveis[0];
+
+  $tituloEditor.textContent =
+    modo === "foto" ? "Coloque sua foto" : "Coloque seu nome";
+  $fieldText.classList.toggle("hidden", modo !== "texto");
+  $fieldPhoto.classList.toggle("hidden", modo !== "foto");
+  canvas.classList.toggle("clicavel", modo === "foto");
+
+  renderMolduraOptions(disponiveis);
+  loadFigure();
+}
+
+/* Tela inicial */
+
+function renderInicio() {
+  TIPOS.forEach((tipo) => {
+    const $escolha = document.querySelector(`.escolha[data-tipo='${tipo}']`);
+    const [primeira] = getMoldurasDisponiveis(tipo);
+
+    $escolha.classList.toggle("hidden", !primeira);
+  });
+
+  const [primeiraTexto] = getMoldurasDisponiveis("texto");
+  if (!primeiraTexto) return;
+
+  const preferida = getThumbnailPath(moldura, "texto") ? moldura : primeiraTexto;
+  document.querySelector("#previa-texto").src = getThumbnailPath(
+    preferida,
+    "texto"
+  );
+}
+
+/* Editor */
+
+function renderMolduraOptions(disponiveis) {
+  const fragment = document.createDocumentFragment();
+
+  disponiveis.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "moldura-option";
+    button.dataset.dominio = item.dominio;
+    button.setAttribute("aria-label", `Usar ${item.titulo}`);
+
+    if (modo === "foto") {
+      const placeholder = document.createElement("img");
+      placeholder.src = baseImgEscolhaImagem.src;
+      placeholder.alt = "";
+      button.append(placeholder);
+    }
+
+    const thumbnail = document.createElement("img");
+    thumbnail.src = getThumbnailPath(item);
+    thumbnail.alt = "";
+    thumbnail.loading = "lazy";
+
+    button.append(thumbnail);
+    button.addEventListener("click", () => selectMoldura(item));
+    fragment.append(button);
+  });
+
+  $molduraOptions.replaceChildren(fragment);
+  $molduraOptions.classList.toggle("hidden", disponiveis.length < 2);
+  updateSelectedControls();
+}
+
+function updateSelectedControls() {
+  $molduraOptions.querySelectorAll(".moldura-option").forEach((option) => {
+    const selecionada = option.dataset.dominio === moldura.dominio;
+    option.classList.toggle("selected", selecionada);
+    option.setAttribute("aria-pressed", String(selecionada));
+  });
+}
+
+function selectMoldura(item) {
+  if (item.dominio === moldura.dominio) return;
+
+  moldura = item;
+  window.history.replaceState({}, "", buildUrl(modo));
+  updateSelectedControls();
+  loadFigure();
+}
+
+function setAviso(mensagem) {
+  $aviso.textContent = mensagem;
+}
+
+/* Canvas */
+
+function loadFigure() {
+  const idCarregamento = ++carregamentoAtual;
+  const novaImagem = new Image();
+
+  novaImagem.onload = () => {
+    if (idCarregamento !== carregamentoAtual) return;
+
+    baseImageFigure = novaImagem;
+    drawCanvas();
+  };
+
+  novaImagem.onerror = () => {
+    if (idCarregamento !== carregamentoAtual) return;
+
+    baseImageFigure = new Image();
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#063d22";
+    context.font = "36px sans-serif";
+    context.textAlign = "center";
+    context.fillText(
+      "Não foi possível carregar esta moldura.",
+      canvas.width / 2,
+      canvas.height / 2
     );
-    context.rotate(moldura.styleName.rotate);
+  };
 
-    context.textBaseline = "middle";
-    context.font = "125px myPantonFont";
+  novaImagem.src = getImagePath(moldura);
+}
 
-    const width = context.measureText($input.value.trim()).width;
+function drawCanvas() {
+  if (!modo || !baseImageFigure.complete || !baseImageFigure.naturalWidth)
+    return;
 
-    context.fillStyle = moldura.styleName.background;
-    roundRect(context, -width / 2 - 45, -175 / 2, width + 45 * 2, 175, 21.66);
+  context.clearRect(0, 0, canvas.width, canvas.height);
 
-    context.fillStyle = moldura.styleName.color;
-    context.fillText($input.value.trim(), -width / 2, 0);
+  if (modo === "foto") {
+    drawPhoto();
+    return;
+  }
+
+  drawText();
+}
+
+function drawText() {
+  context.drawImage(baseImageFigure, 0, 0, canvas.width, canvas.height);
+
+  const textoDigitado = $inputText.value.trim();
+  const texto = (textoDigitado || TEXTO_EXEMPLO).toLocaleUpperCase("pt-BR");
+  const style = moldura.styleText;
+  let fontSize = style.fontSize;
+
+  const getPaddingX = (size) => size * 0.5;
+  const setFont = (size) => {
+    context.font = `${size}px myPantonFont, sans-serif`;
+  };
+
+  context.save();
+  context.globalAlpha = textoDigitado ? 1 : 0.5;
+  setFont(fontSize);
+
+  while (
+    context.measureText(texto).width + getPaddingX(fontSize) * 2 >
+      style.maxWidth &&
+    fontSize > style.minFontSize
+  ) {
+    fontSize -= 2;
+    setFont(fontSize);
+  }
+
+  const paddingX = getPaddingX(fontSize);
+  const larguraTexto = Math.min(
+    context.measureText(texto).width,
+    style.maxWidth - paddingX * 2
+  );
+  const alturaMaiuscula = context.measureText("H").actualBoundingBoxAscent;
+  const larguraFaixa = larguraTexto + paddingX * 2;
+  const alturaFaixa = alturaMaiuscula + fontSize * 0.6;
+
+  if (style.backgroundColor) {
+    context.save();
+    context.fillStyle = style.backgroundColor;
+    context.shadowColor = "rgba(0, 0, 0, 0.35)";
+    context.shadowBlur = 18;
+    context.shadowOffsetY = 8;
+    context.beginPath();
+    context.roundRect(
+      style.translateX - larguraFaixa / 2,
+      style.translateY - alturaFaixa / 2,
+      larguraFaixa,
+      alturaFaixa,
+      alturaFaixa / 2
+    );
+    context.fill();
     context.restore();
   }
+
+  const baseline = style.translateY + alturaMaiuscula / 2;
+  context.textAlign = "center";
+  context.textBaseline = "alphabetic";
+  context.fillStyle = style.color;
+  context.strokeStyle = style.color;
+  context.lineJoin = "round";
+  context.lineWidth = fontSize * 0.05;
+  context.strokeText(texto, style.translateX, baseline, larguraTexto);
+  context.fillText(texto, style.translateX, baseline, larguraTexto);
+  context.restore();
 }
 
-// Função para desenhar a figura e a foto do usuário
-function drawFilterPhoto() {
-  const $input = $inputUser;
+function drawPhoto() {
+  const photo = baseImageUsuario || baseImgEscolhaImagem;
 
-  context.drawImage(baseImgEscolhaImagem, 0, 0);
-  context.drawImage(baseImageMascara, 0, 0);
-  context.save();
-
-  if ($input.files.length) {
-    const reader = new FileReader();
-
-    reader.onload = function (e) {
-      context.clearRect(0, 0, 1080, 1080);
-
-      baseImageUsuario.src = e.target.result;
-      baseImageUsuario.onload = function () {
-        if (baseImageUsuario.width < baseImageUsuario.height) {
-          context.drawImage(
-            baseImageUsuario,
-            0,
-            (baseImageUsuario.height - baseImageUsuario.width) / 2,
-            baseImageUsuario.width,
-            baseImageUsuario.width,
-            0,
-            0,
-            1080,
-            1080
-          );
-        } else {
-          context.drawImage(
-            baseImageUsuario,
-            (baseImageUsuario.width - baseImageUsuario.height) / 2,
-            0,
-            baseImageUsuario.height,
-            baseImageUsuario.height,
-            0,
-            0,
-            1080,
-            1080
-          );
-        }
-
-        context.drawImage(baseImageMascara, 0, 0, 1080, 1080);
-      };
-    };
-
-    reader.readAsDataURL($input.files[0]);
-  }
+  if (photo.complete && photo.naturalWidth) drawImageCover(photo);
+  context.drawImage(baseImageFigure, 0, 0, canvas.width, canvas.height);
 }
 
-// Função para desenhar um retângulo com bordas arredondadas
-function roundRect(ctx, x, y, width, height, radius = 5) {
-  if (typeof radius === "number") {
-    radius = { tl: radius, tr: radius, br: radius, bl: radius };
-  } else {
-    radius = { tl: 0, tr: 0, br: 0, bl: 0, ...radius };
-  }
+function drawImageCover(image) {
+  const sourceSize = Math.min(image.naturalWidth, image.naturalHeight);
+  const sourceX = (image.naturalWidth - sourceSize) / 2;
+  const sourceY = (image.naturalHeight - sourceSize) / 2;
 
-  ctx.beginPath();
-  ctx.moveTo(x + radius.tl, y);
-  ctx.lineTo(x + width - radius.tr, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
-  ctx.lineTo(x + width, y + height - radius.br);
-  ctx.quadraticCurveTo(
-    x + width,
-    y + height,
-    x + width - radius.br,
-    y + height
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceSize,
+    sourceSize,
+    0,
+    0,
+    canvas.width,
+    canvas.height
   );
-  ctx.lineTo(x + radius.bl, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
-  ctx.lineTo(x, y + radius.tl);
-  ctx.quadraticCurveTo(x, y, x + radius.tl, y);
-  ctx.closePath();
-  ctx.fill();
 }
 
-// Função assíncrona para compartilhar a imagem
-async function shareImage() {
-  try {
-    gtag("event", "share");
+function loadUserPhoto() {
+  const [file] = $inputPhoto.files;
+  if (!file) return;
 
-    const arqName = "figure" + new Date().getTime();
+  const imageUrl = URL.createObjectURL(file);
+  const image = new Image();
 
-    canvas.toBlob((blob) => {
-      const shareData = {
-        files: [
-          new File([blob], arqName + ".jpg", {
-            type: "image/jpeg",
-            lastModified: new Date().getTime(),
-          }),
-        ],
-      };
+  image.onload = () => {
+    URL.revokeObjectURL(imageUrl);
+    baseImageUsuario = image;
+    $btnFoto.textContent = "Trocar foto";
+    setAviso("");
+    drawCanvas();
+  };
+  image.onerror = () => {
+    URL.revokeObjectURL(imageUrl);
+    setAviso("Não foi possível abrir essa imagem. Escolha outro arquivo.");
+  };
+  image.src = imageUrl;
+}
 
-      if (navigator.canShare && navigator.canShare(shareData)) {
-        navigator
-          .share(shareData)
-          .then(() => {
-            console.log("Compartilhado com sucesso!");
-          })
-          .catch((error) => {
-            alert("Erro ao compartilhar: ", error.message || error);
-          });
-      } else {
-        alert("Navegador não suporta compartilhamento de arquivos.");
-      }
-    });
-  } catch (error) {
-    gtag("event", "exception", {
-      description: "[fn:shareImage] " + (error.message || error),
-      fatal: false,
-    });
-    alert(
-      "Tente outra vez! Aconteceu algo que impediu o compartilhamento: " +
-        (error.message || error)
-    );
+/* Exportação */
+
+function trackEvent(eventName) {
+  if (typeof gtag === "function") gtag("event", eventName);
+}
+
+function isReadyToExport() {
+  if (modo === "texto" && !$inputText.value.trim()) {
+    setAviso("Digite seu nome antes de exportar.");
+    $inputText.focus();
+    return false;
   }
+
+  if (modo === "foto" && !baseImageUsuario) {
+    setAviso("Escolha sua foto antes de exportar.");
+    return false;
+  }
+
+  setAviso("");
+  return true;
 }
 
-// Função para salvar a imagem (a ser implementada)
+function getFileName() {
+  return `${moldura.dominio}-${Date.now()}.png`;
+}
+
 function saveImage() {
+  if (!isReadyToExport()) return;
+
   try {
-    gtag("event", "download");
-
-    const arqName = "figure" + new Date().getTime();
-
-    const a = document.createElement("a");
-    a.setAttribute("href", canvas.toDataURL("image/png"));
-    a.setAttribute("download", arqName);
-    a.click();
+    trackEvent("download");
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = getFileName();
+    link.click();
   } catch (error) {
-    gtag("event", "exception", {
-      description: "[fn:saveImage] " + (error.message || error),
-      fatal: false,
-    });
-    alert(
-      "Tente outra vez! Aconteceu algo que impediu o download: " +
+    setAviso(
+      "Não foi possível salvar a imagem. Tente outra vez. " +
         (error.message || error)
     );
   }
 }
+
+async function exportImage() {
+  if (!isReadyToExport()) return;
+
+  $btnExportar.disabled = true;
+
+  try {
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/png")
+    );
+    if (!blob) throw new Error("A imagem não pôde ser gerada.");
+
+    const file = new File([blob], getFileName(), {
+      type: "image/png",
+      lastModified: Date.now(),
+    });
+    const shareData = { files: [file] };
+
+    if (!navigator.canShare || !navigator.canShare(shareData)) {
+      saveImage();
+      setAviso("Imagem baixada! Agora é só postar ou enviar para os amigos.");
+      return;
+    }
+
+    trackEvent("share");
+    await navigator.share(shareData);
+  } catch (error) {
+    if (error.name === "AbortError") return;
+
+    setAviso(
+      "Não foi possível compartilhar. Use o botão “Baixar imagem”. " +
+        (error.message || error)
+    );
+  } finally {
+    $btnExportar.disabled = false;
+  }
+}
+
+/* Eventos */
+
+document.querySelectorAll(".escolha").forEach((option) => {
+  option.addEventListener("click", () => openEditor(option.dataset.tipo));
+});
+document.querySelector("#btnVoltar").addEventListener("click", goHome);
+$btnFoto.addEventListener("click", () => $inputPhoto.click());
+canvas.addEventListener("click", () => {
+  if (modo === "foto") $inputPhoto.click();
+});
+$inputText.addEventListener("input", () => {
+  setAviso("");
+  drawCanvas();
+});
+$inputText.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") $inputText.blur();
+});
+$inputPhoto.addEventListener("change", loadUserPhoto);
+$btnExportar.addEventListener("click", exportImage);
+document.querySelector("#btnBaixar").addEventListener("click", saveImage);
+window.addEventListener("popstate", () => {
+  navegouParaEditor = false;
+  render();
+});
+
+render();
