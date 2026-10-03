@@ -14,6 +14,7 @@ const $btnExportar = document.querySelector("#btnExportar");
 
 const TIPOS = ["texto", "foto"];
 const TEXTO_EXEMPLO = "SEU NOME";
+const TITULO_SITE = document.title;
 
 let moldura = molduras[0];
 let modo = null;
@@ -78,6 +79,7 @@ function buildUrl(tipo) {
 }
 
 function openEditor(tipo) {
+  trackEvent("select_content", { content_type: tipo });
   window.history.pushState({}, "", buildUrl(tipo));
   navegouParaEditor = true;
   render();
@@ -105,6 +107,7 @@ function render() {
   setAviso("");
 
   if (!modo) {
+    document.title = TITULO_SITE;
     renderInicio();
     return;
   }
@@ -113,6 +116,7 @@ function render() {
 
   $tituloEditor.textContent =
     modo === "foto" ? "Coloque sua foto" : "Coloque seu nome";
+  document.title = `${$tituloEditor.textContent} · ${TITULO_SITE}`;
   $fieldText.classList.toggle("hidden", modo !== "texto");
   $fieldPhoto.classList.toggle("hidden", modo !== "foto");
   canvas.classList.toggle("clicavel", modo === "foto");
@@ -354,8 +358,14 @@ function loadUserPhoto() {
 
 /* Exportação */
 
-function trackEvent(eventName) {
-  if (typeof gtag === "function") gtag("event", eventName);
+function trackEvent(eventName, params = {}) {
+  if (typeof gtag !== "function") return;
+
+  gtag("event", eventName, {
+    content_type: modo,
+    item_id: moldura.dominio,
+    ...params,
+  });
 }
 
 function isReadyToExport() {
@@ -378,11 +388,11 @@ function getFileName() {
   return `${moldura.dominio}-${Date.now()}.png`;
 }
 
-function saveImage() {
+function saveImage(origem = "baixar_imagem") {
   if (!isReadyToExport()) return;
 
   try {
-    trackEvent("download");
+    trackEvent("download_image", { method: origem });
     const link = document.createElement("a");
     link.href = canvas.toDataURL("image/png");
     link.download = getFileName();
@@ -413,13 +423,13 @@ async function exportImage() {
     const shareData = { files: [file] };
 
     if (!navigator.canShare || !navigator.canShare(shareData)) {
-      saveImage();
+      saveImage("exportar");
       setAviso("Imagem baixada! Agora é só postar ou enviar para os amigos.");
       return;
     }
 
-    trackEvent("share");
     await navigator.share(shareData);
+    trackEvent("share", { method: "compartilhamento_nativo" });
   } catch (error) {
     if (error.name === "AbortError") return;
 
@@ -451,7 +461,9 @@ $inputText.addEventListener("keydown", (event) => {
 });
 $inputPhoto.addEventListener("change", loadUserPhoto);
 $btnExportar.addEventListener("click", exportImage);
-document.querySelector("#btnBaixar").addEventListener("click", saveImage);
+document
+  .querySelector("#btnBaixar")
+  .addEventListener("click", () => saveImage());
 window.addEventListener("popstate", () => {
   navegouParaEditor = false;
   render();

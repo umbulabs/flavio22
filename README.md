@@ -8,6 +8,18 @@ Aplicação web estática para criar e compartilhar artes personalizadas de camp
 2. **Editor:** a prévia mostra a moldura; abaixo dela ficam as miniaturas para trocar de arte e o campo de nome ou o botão para escolher a foto.
 3. **Exportar:** abre o compartilhamento nativo do dispositivo (WhatsApp, Instagram etc.). Quando o navegador não oferece esse recurso, a imagem é baixada. O botão **Baixar imagem** sempre faz o download.
 
+## Métricas (Google Analytics 4)
+
+A tag `G-M7PPV3Y7DJ` fica em `index.html`. Além das visitas (`page_view`), o site envia:
+
+| Evento | Quando | Parâmetros |
+| --- | --- | --- |
+| `select_content` | a pessoa escolhe nome ou foto na tela inicial | `content_type` (`texto` ou `foto`), `item_id` |
+| `share` | o compartilhamento nativo é concluído | `method`, `content_type`, `item_id` (moldura) |
+| `download_image` | a imagem é baixada | `method` (`baixar_imagem` ou `exportar`), `content_type`, `item_id` |
+
+Para ver `content_type`, `item_id` e `method` nos relatórios, cadastre-os como dimensões personalizadas em **Administrador → Definições personalizadas** no GA4.
+
 ## Executar localmente com Docker
 
 É necessário ter Docker com o plugin Docker Compose instalado.
@@ -64,7 +76,7 @@ As imagens `thumbnailText` e `thumbnailPhoto` controlam se a moldura aparece em 
 ```text
 .
 ├── .github/              # instruções para IAs e workflow do GitHub Pages
-├── assets/               # fontes, ícones e imagem auxiliar
+├── assets/               # fontes, ícones, favicon e imagem de compartilhamento
 ├── docker/               # configuração do servidor Nginx
 ├── imagens/              # artes e molduras das campanhas
 ├── scripts/main.js       # interação da interface e geração das imagens
@@ -77,7 +89,7 @@ As imagens `thumbnailText` e `thumbnailPhoto` controlam se a moldura aparece em 
 
 O workflow `.github/workflows/deploy-pages.yml` publica o site no GitHub Pages a cada push na branch `main` e também pode ser executado manualmente na aba **Actions**.
 
-No repositório do GitHub, configure **Settings → Pages → Build and deployment → Source** como **GitHub Actions**. A URL esperada para este repositório é <https://umbulabs.github.io/molduras/>.
+No repositório do GitHub, configure **Settings → Pages → Build and deployment → Source** como **GitHub Actions**. O site é publicado no domínio próprio <https://flavio22.joaoeymard.dev/>, configurado pelo arquivo `CNAME` e em **Settings → Pages → Custom domain**. Ao trocar o domínio, atualize também as URLs absolutas dos metadados em `index.html`.
 
 ## Desenvolvimento assistido por IA
 
