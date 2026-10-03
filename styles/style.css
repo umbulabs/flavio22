@@ -72,8 +72,112 @@ button,
   padding: 0 16px;
 }
 
-.tela {
-  flex: 1;
+/* Doação */
+
+.faixa-doacao {
+  background: var(--amarelo);
+  border: 0;
+  color: var(--verde-escuro);
+  cursor: pointer;
+  display: block;
+  font: 600 0.85rem "Open Sans", sans-serif;
+  padding: 7px 16px;
+  text-align: center;
+  width: 100%;
+}
+
+.faixa-doacao strong {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.faixa-doacao:hover {
+  filter: brightness(1.05);
+}
+
+.faixa-doacao:focus-visible {
+  outline: 3px solid var(--branco);
+  outline-offset: -3px;
+}
+
+.modal-doacao {
+  background: var(--verde);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  color: var(--branco);
+  max-width: min(400px, calc(100vw - 32px));
+  padding: 28px 24px 20px;
+  text-align: center;
+  width: 100%;
+}
+
+.modal-doacao::backdrop {
+  background: rgba(2, 20, 11, 0.75);
+}
+
+.modal-doacao h2 {
+  color: var(--amarelo);
+  font-family: "Panton", "Open Sans", sans-serif;
+  font-size: 1.6rem;
+  margin: 0 0 10px;
+  padding: 0 32px;
+  text-transform: uppercase;
+}
+
+.modal-doacao > p {
+  color: var(--texto-suave);
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.modal-fechar {
+  background: transparent;
+  border: 0;
+  color: var(--texto-suave);
+  cursor: pointer;
+  font-size: 1.6rem;
+  height: 44px;
+  line-height: 1;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 44px;
+}
+
+.modal-fechar:hover,
+.modal-fechar:focus-visible {
+  color: var(--branco);
+}
+
+.pix-acoes {
+  display: grid;
+  gap: 10px;
+}
+
+.btn-qr {
+  background: var(--branco);
+  color: var(--verde-escuro);
+}
+
+.pix-qr {
+  background: var(--branco);
+  border-radius: 12px;
+  display: block;
+  height: auto;
+  margin: 14px auto 0;
+  max-width: 220px;
+  padding: 6px;
+  width: 100%;
+}
+
+.btn-copiar {
+  background: var(--amarelo);
+  color: var(--verde-escuro);
+}
+
+.modal-doacao .aviso {
+  margin: 8px 0;
 }
 
 /* Tela inicial */

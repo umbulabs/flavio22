@@ -60,6 +60,10 @@
     <div>Para continuar habilite o JavaScript</div>
   </noscript>
 
+  <button id="faixaDoacao" class="faixa-doacao" type="button">
+    Gostou das molduras? <strong>Apoie com um Pix</strong>
+  </button>
+
   <div class="container">
 
     <section id="inicio" class="tela inicio" aria-labelledby="titulo-inicio">
@@ -138,6 +142,26 @@
       </a>
     </footer>
   </div>
+
+  <dialog id="modalDoacao" class="modal-doacao" aria-labelledby="titulo-doacao">
+    <button class="modal-fechar" type="button" data-fechar aria-label="Fechar">×</button>
+    <h2 id="titulo-doacao">Apoie este projeto</h2>
+    <p>
+      As molduras são gratuitas. Se puder, contribua com qualquer valor pelo Pix
+      para manter o site no ar.
+    </p>
+
+    <div class="pix-acoes">
+      <button id="btnCopiarPix" class="btn btn-copiar" type="button" autofocus>Copiar chave Pix</button>
+      <button id="btnQrPix" class="btn btn-qr" type="button" aria-expanded="false" aria-controls="qrPix">
+        Mostrar QR Code
+      </button>
+    </div>
+    <img id="qrPix" class="pix-qr hidden" src="./assets/pix-qrcode.svg" width="220" height="220"
+      alt="QR Code Pix para doação" />
+    <p id="avisoPix" class="aviso" role="status" aria-live="polite"></p>
+    <button id="btnContinuar" class="btn btn-secundario" type="button" data-fechar>Agora não</button>
+  </dialog>
 
   <script src="./scripts/main.js"></script>
 </body>

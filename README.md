@@ -8,6 +8,10 @@ Aplicação web estática para criar e compartilhar artes personalizadas de camp
 2. **Editor:** a prévia mostra a moldura; abaixo dela ficam as miniaturas para trocar de arte e o campo de nome ou o botão para escolher a foto. No modo foto, a imagem pode ser posicionada arrastando na prévia e ampliada com pinça, roda do mouse ou o controle de zoom; ela sempre cobre a moldura inteira.
 3. **Exportar:** abre o compartilhamento nativo do dispositivo (WhatsApp, Instagram etc.). Quando o navegador não oferece esse recurso, a imagem é baixada. O botão **Baixar imagem** sempre faz o download.
 
+## Doação
+
+A chave Pix (aleatória) fica no objeto `DOACAO`, no início de `scripts/main.js`, e o QR Code correspondente em `assets/pix-qrcode.svg`. Ao trocar a chave, gere um novo QR Code Pix estático com a mesma chave. Sem chave, a faixa do topo e o modal ficam ocultos. Com chave, o modal aparece antes da primeira exportação ou download em cada aparelho (registro em `localStorage`), e a faixa do topo permite abri-lo a qualquer momento. Fechar o modal de qualquer forma continua a exportação pedida.
+
 ## Métricas (Google Analytics 4)
 
 A tag `G-M7PPV3Y7DJ` fica em `index.html`. Além das visitas (`page_view`), o site envia:
@@ -17,6 +21,9 @@ A tag `G-M7PPV3Y7DJ` fica em `index.html`. Além das visitas (`page_view`), o si
 | `select_content` | a pessoa escolhe nome ou foto na tela inicial | `content_type` (`texto` ou `foto`), `item_id` |
 | `share` | o compartilhamento nativo é concluído | `method`, `content_type`, `item_id` (moldura) |
 | `download_image` | a imagem é baixada | `method` (`baixar_imagem` ou `exportar`), `content_type`, `item_id` |
+| `view_donation` | o modal de doação é aberto | `method` (`antes_da_acao` ou `faixa`) |
+| `copy_pix_key` | a chave Pix é copiada no modal | — |
+| `view_pix_qrcode` | o QR Code Pix é exibido no modal | — |
 
 Para ver `content_type`, `item_id` e `method` nos relatórios, cadastre-os como dimensões personalizadas em **Administrador → Definições personalizadas** no GA4.
 

@@ -15,6 +15,21 @@ const $aviso = document.querySelector("#aviso");
 const $btnExportar = document.querySelector("#btnExportar");
 
 const TIPOS = ["texto", "foto"];
+
+// Doação: sem chave Pix, a faixa e o modal ficam desativados.
+// O QR Code em assets/pix-qrcode.svg é gerado a partir desta mesma chave.
+const DOACAO = {
+  chavePix: "bde0b78c-7f7d-490d-a464-0aa40c8c9bc0",
+};
+const DOACAO_VISTA = "molduras-doacao-vista";
+
+const $faixaDoacao = document.querySelector("#faixaDoacao");
+const $modalDoacao = document.querySelector("#modalDoacao");
+const $btnContinuar = document.querySelector("#btnContinuar");
+const $avisoPix = document.querySelector("#avisoPix");
+const $btnQrPix = document.querySelector("#btnQrPix");
+const $qrPix = document.querySelector("#qrPix");
+let acaoPendente = null;
 const TEXTO_EXEMPLO = "SEU NOME";
 const TITULO_SITE = document.title;
 
@@ -578,6 +593,91 @@ async function exportImage() {
   }
 }
 
+/* Doação */
+
+function doacaoAtiva() {
+  return Boolean(DOACAO.chavePix) && typeof $modalDoacao.showModal === "function";
+}
+
+function doacaoJaVista() {
+  try {
+    return localStorage.getItem(DOACAO_VISTA) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function marcarDoacaoVista() {
+  try {
+    localStorage.setItem(DOACAO_VISTA, "1");
+  } catch {
+    // Sem armazenamento, o modal pode voltar a aparecer; nada mais muda.
+  }
+}
+
+function abrirDoacao(acao = null) {
+  acaoPendente = acao;
+  $avisoPix.textContent = "";
+  toggleQrPix(false);
+  $btnContinuar.textContent = acao ? "Continuar sem doar" : "Agora não";
+  marcarDoacaoVista();
+  trackEvent("view_donation", { method: acao ? "antes_da_acao" : "faixa" });
+  $modalDoacao.showModal();
+}
+
+function comDoacao(acao) {
+  if (!isReadyToExport()) return;
+
+  if (!doacaoAtiva() || doacaoJaVista()) {
+    acao();
+    return;
+  }
+
+  abrirDoacao(acao);
+}
+
+function toggleQrPix(mostrar) {
+  $qrPix.classList.toggle("hidden", !mostrar);
+  $btnQrPix.setAttribute("aria-expanded", String(mostrar));
+  $btnQrPix.textContent = mostrar ? "Ocultar QR Code" : "Mostrar QR Code";
+}
+
+async function copiarPix() {
+  try {
+    await navigator.clipboard.writeText(DOACAO.chavePix);
+    $avisoPix.textContent = "Chave copiada! Cole no app do seu banco.";
+  } catch {
+    $avisoPix.textContent = `Não foi possível copiar. Chave Pix: ${DOACAO.chavePix}`;
+  }
+
+  trackEvent("copy_pix_key");
+}
+
+function setupDoacao() {
+  $faixaDoacao.classList.toggle("hidden", !doacaoAtiva());
+  if (!doacaoAtiva()) return;
+
+  $faixaDoacao.addEventListener("click", () => abrirDoacao());
+  document.querySelector("#btnCopiarPix").addEventListener("click", copiarPix);
+  $btnQrPix.addEventListener("click", () => {
+    const mostrar = $qrPix.classList.contains("hidden");
+    toggleQrPix(mostrar);
+    if (mostrar) trackEvent("view_pix_qrcode");
+  });
+  $modalDoacao.querySelectorAll("[data-fechar]").forEach((botao) => {
+    botao.addEventListener("click", () => $modalDoacao.close());
+  });
+  $modalDoacao.addEventListener("click", (event) => {
+    if (event.target === $modalDoacao) $modalDoacao.close();
+  });
+  // Fechar o modal de qualquer forma segue com a exportação pedida.
+  $modalDoacao.addEventListener("close", () => {
+    const acao = acaoPendente;
+    acaoPendente = null;
+    if (acao) acao();
+  });
+}
+
 /* Eventos */
 
 document.querySelectorAll(".escolha").forEach((option) => {
@@ -608,13 +708,14 @@ $inputText.addEventListener("keydown", (event) => {
   if (event.key === "Enter") $inputText.blur();
 });
 $inputPhoto.addEventListener("change", loadUserPhoto);
-$btnExportar.addEventListener("click", exportImage);
+$btnExportar.addEventListener("click", () => comDoacao(exportImage));
 document
   .querySelector("#btnBaixar")
-  .addEventListener("click", () => saveImage());
+  .addEventListener("click", () => comDoacao(() => saveImage()));
 window.addEventListener("popstate", () => {
   navegouParaEditor = false;
   render();
 });
 
+setupDoacao();
 render();
